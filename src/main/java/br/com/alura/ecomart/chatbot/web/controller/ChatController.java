@@ -4,7 +4,6 @@ import br.com.alura.ecomart.chatbot.web.dto.PerguntaDto;
 import br.com.alura.ecomart.chatbot.web.service.ChatbotService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
 @Controller
 @RequestMapping({"/", "chat"})
@@ -25,19 +24,8 @@ public class ChatController {
 
     @PostMapping
     @ResponseBody
-    public ResponseBodyEmitter responderPergunta(@RequestBody PerguntaDto dto) {
-        var fluxoDeRespostas = service.responderPergunta(dto.pergunta());
-        var emitter = new ResponseBodyEmitter();
-
-        fluxoDeRespostas.subscribe(chuck -> {
-            var token = chuck.getChoices().get(0).getMessage().getContent();
-
-            if (token != null) {
-                emitter.send(token);
-            }
-        }, emitter::completeWithError, emitter::complete);
-
-        return emitter;
+    public String responderPergunta(@RequestBody PerguntaDto dto) {
+        return service.responderPergunta(dto.pergunta());
     }
 
     @GetMapping("limpar")
