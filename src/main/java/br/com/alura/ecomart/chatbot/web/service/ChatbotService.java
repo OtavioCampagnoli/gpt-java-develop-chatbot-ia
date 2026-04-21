@@ -4,6 +4,8 @@ import br.com.alura.ecomart.chatbot.infra.openai.DadosRequisicaoChatCompletion;
 import br.com.alura.ecomart.chatbot.infra.openai.OpenAIClient;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class ChatbotService {
 
@@ -19,4 +21,12 @@ public class ChatbotService {
         return client.enviarRequisicaoChatCompletion(dados);
     }
 
+    public List<String> carregarHistorico() {
+        return client.carregarHistorico();
+    }
+
+
+    public void limparConversa() {
+        client.apagarThread();
+    }
 }

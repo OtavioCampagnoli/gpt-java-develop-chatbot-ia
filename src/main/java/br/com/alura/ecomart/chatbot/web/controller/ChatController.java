@@ -3,6 +3,7 @@ package br.com.alura.ecomart.chatbot.web.controller;
 import br.com.alura.ecomart.chatbot.web.dto.PerguntaDto;
 import br.com.alura.ecomart.chatbot.web.service.ChatbotService;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
@@ -28,9 +29,19 @@ public class ChatController {
         return service.responderPergunta(dto.pergunta());
     }
 
+    @GetMapping
+    public String carregarPaginaChatbot(Model model) {
+        var mensagens = service.carregarHistorico();
+
+        model.addAttribute("historico", mensagens);
+
+        return PAGINA_CHAT;
+    }
+
     @GetMapping("limpar")
     public String limparConversa() {
-        return PAGINA_CHAT;
+        service.limparConversa();
+        return "redirect:/chat";
     }
 
 }

@@ -10,8 +10,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class OpenAIClient {
@@ -19,7 +22,7 @@ public class OpenAIClient {
     private final String apiKey;
     private final OpenAiService service;
     private final String assistantId;
-    private String treadId;
+    private String threadId;
 
 
     public OpenAIClient(@Value("${app.openai.api.key}") String apiKey, @Value("${app.openai.assistant.id}") String assistantId) {
@@ -35,15 +38,15 @@ public class OpenAIClient {
                 .content(dados.promptUsuario())
                 .build();
 
-        if (this.treadId == null) {
+        if (this.threadId == null) {
             var threadRequest = ThreadRequest
                     .builder()
                     .messages(Arrays.asList(messageRequest))
                     .build();
             var thread = service.createThread(threadRequest);
-            this.treadId = thread.getId();
+            this.threadId = thread.getId();
         } else {
-            service.createMessage(this.treadId, messageRequest);
+            service.createMessage(this.threadId, messageRequest);
         }
 
         var runRequest = RunCreateRequest
@@ -51,18 +54,18 @@ public class OpenAIClient {
                 .assistantId(assistantId)
                 .build();
 
-        var run = service.createRun(treadId, runRequest);
+        var run = service.createRun(threadId, runRequest);
 
         try {
             while (!run.getStatus().equalsIgnoreCase("completed")) {
                 Thread.sleep(1000 * 10);
-                run = service.retrieveRun(treadId, run.getId());
+                run = service.retrieveRun(threadId, run.getId());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
-        var messages = service.listMessages(treadId);
+        var messages = service.listMessages(threadId);
 
         return messages
                 .getData()
@@ -71,4 +74,27 @@ public class OpenAIClient {
                 .findFirst().get().getContent().get(0).getText().getValue();
     }
 
+    public List<String> carregarHistorico() {
+        var mensagens = new ArrayList<String>();
+
+        if (this.threadId != null) {
+            mensagens.addAll(
+                    service
+                            .listMessages(threadId)
+                            .getData()
+                            .stream()
+                            .sorted(Comparator.comparingInt(Message::getCreatedAt))
+                            .map(m -> m.getContent().get(0).getText().getValue())
+                            .collect(Collectors.toList())
+            );
+        }
+        return mensagens;
+    }
+
+    public void apagarThread() {
+        if(this.threadId != null) {
+            service.deleteThread(threadId);
+            this.threadId = null;
+        }
+    }
 }
